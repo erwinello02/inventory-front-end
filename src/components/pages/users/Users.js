@@ -1,10 +1,52 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { usersData } from "./usersData";
 import AddUser from "./AddUser";
+import EditUser from "./EditUser";
+import Swal from "sweetalert2";
 
 const Users = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalEditOpen, setIsModalEditOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState(usersData);
+
+  useEffect(() => {
+    const data = JSON.parse(localStorage.getItem('users_data'));
+    if (data !== null && Object.keys(data).length !== 0) setUsers(data);
+  }, []);
+
+  const handleEdit = (id) => {
+    const [user] = users.filter((user) => user.id === id);
+    setSelectedUser(user);
+    setIsModalEditOpen(true);
+  };
+
+  const handleDelete = (id) => {
+    Swal.fire({
+      icon: "warning",
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "No, cancel!",
+    }).then((result) => {
+      if (result.value) {
+        const [user] = users.filter((user) => user.id === id);
+
+        Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: `${user.firstName} ${user.middleName} ${user.lastName}'s data has been deleted.`,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+
+        const usersCopy = users.filter((user) => user.id !== id);
+        localStorage.setItem("users_data", JSON.stringify(usersCopy));
+        setUsers(usersCopy);
+      }
+    });
+  };
 
   return (
     <div className="users">
@@ -60,10 +102,26 @@ const Users = () => {
                   <td class="border text-md px-3.5 py-1.5">{user.gender}</td>
                   <td class="border text-md px-3.5 py-1.5">{user.userName}</td>
                   <td class="border text-md px-3.5 py-1.5">
-                    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-3.5 mr-2">
+                    <button
+                      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-3.5 mr-2"
+                      onClick={() => handleEdit(user.id)}
+                    >
                       Edit
                     </button>
-                    <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-3.5">
+                    {isModalEditOpen && (
+                      <EditUser
+                        isOpen={isModalEditOpen}
+                        onClose={() => setIsModalEditOpen(false)}
+                        users={users}
+                        selectedUser={selectedUser}
+                        setUsers={setUsers}
+                        setIsModalEditOpen={setIsModalEditOpen}
+                      />
+                    )}
+                    <button
+                      class="bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-3.5"
+                      onClick={() => handleDelete(user.id)}
+                    >
                       Delete
                     </button>
                   </td>

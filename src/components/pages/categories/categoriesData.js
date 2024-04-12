@@ -1,6 +1,7 @@
 export const categoriesData = [
   {
     id: 1,
+    categoryName: "category name 1",
     categoryCode: "code_cat_1",
     categoryDesc: "Category Description 1",
     image: "Category Image 1",
@@ -8,6 +9,7 @@ export const categoriesData = [
   },
   {
     id: 2,
+    categoryName: "category name 2",
     categoryCode: "code_cat_2",
     categoryDesc: "Category Description 2",
     image: "Category Image 2",
@@ -15,6 +17,7 @@ export const categoriesData = [
   },
   {
     id: 3,
+    categoryName: "category name 3",
     categoryCode: "code_cat_3",
     categoryDesc: "Category Description 3",
     image: "Category Image 3",
@@ -22,6 +25,7 @@ export const categoriesData = [
   },
   {
     id: 4,
+    categoryName: "category name 4",
     categoryCode: "code_cat_4",
     categoryDesc: "Category Description 4",
     image: "Category Image 4",
@@ -29,6 +33,7 @@ export const categoriesData = [
   },
   {
     id: 5,
+    categoryName: "category name 5",
     categoryCode: "code_cat_5",
     categoryDesc: "Category Description 5",
     image: "Category Image 5",

@@ -1,24 +1,55 @@
-import React from 'react'
-import { categoriesData } from './categoriesData'
+import React, { useEffect, useState } from "react";
+import { categoriesData } from "./categoriesData";
+import AddCategory from "./AddCategory";
+import EditCategory from "./EditCategory";
 
-function Categories() {
+const Categories = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [categories, setCategories] = useState(categoriesData);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isModalEditOpen, setIsModalEditOpen] = useState(false);
+
+  useEffect(() => {
+    const data = JSON.parse(localStorage.getItem("categories_data"));
+    if (data !== null && Object.keys(data).length !== 0) setCategories(data);
+  }, []);
+
+  const handleEdit = (id) => {
+    const [category] = categories.filter((category) => category.id === id);
+    setSelectedCategory(category);
+    setIsModalEditOpen(true);
+  };
+
   return (
     <div className="categories">
       <div className="p-7">
         <div className="container shadow-lg mb-5">
-            <h1 className="text-2xl pt-2 pl-5 pb-2 font-semibold">Category Management</h1>
-            <div className="pt-1 pl-5 pb-5">
-            <button class="bg-dark-purple hover:bg-cyan-700 text-white font-bold rounded py-2 px-7">
-                Add Category
+          <h1 className="text-2xl pt-2 pl-5 pb-2 font-semibold">
+            Category Management
+          </h1>
+          <div className="pt-1 pl-5 pb-5">
+            <button
+              class="bg-dark-purple hover:bg-cyan-700 text-white font-bold rounded py-2 px-7"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Add Category
             </button>
-            </div>
+            <AddCategory
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              categories={categories}
+              setCategories={setCategories}
+              setIsModalOpen={setIsModalOpen}
+            />
+          </div>
         </div>
         <div class="relative w-full flex flex-col shadow-lg md-6 overflow-x-auto">
           <table class="w-auto">
             <thead>
               <tr class="bg-gray-200">
                 <th class="border text-md px-5 py-1.5">ID</th>
-                <th class="border text-md px-5 py-1.5">Category code</th>
+                <th class="border text-md px-5 py-1.5">Category Name</th>
+                <th class="border text-md px-5 py-1.5">Category Code</th>
                 <th class="border text-md px-5 py-1.5">Description</th>
                 <th class="border text-md px-5 py-1.5">Image</th>
                 <th class="border text-md px-5 py-1.5">Status</th>
@@ -29,14 +60,28 @@ function Categories() {
               {categoriesData.map((cat, i) => (
                 <tr key={cat.id}>
                   <td class="border text-md px-5 py-1.5">{i + 1}</td>
+                  <td class="border text-md px-5 py-1.5">{cat.categoryName}</td>
                   <td class="border text-md px-5 py-1.5">{cat.categoryCode}</td>
                   <td class="border text-md px-5 py-1.5">{cat.categoryDesc}</td>
                   <td class="border text-md px-5 py-1.5">{cat.image}</td>
                   <td class="border text-md px-5 py-1.5">{cat.status}</td>
                   <td class="border text-md px-5 py-1.5">
-                    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-3.5 mr-2">
+                    <button
+                      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-3.5 mr-2"
+                      onClick={() => handleEdit(cat.id)}
+                    >
                       Edit
                     </button>
+                    {isModalEditOpen && (
+                      <EditCategory
+                        isOpen={isModalEditOpen}
+                        onClose={() => setIsModalEditOpen(false)}
+                        categories={categories}
+                        selectedCategory={selectedCategory}
+                        setCategories={setCategories}
+                        setIsModalEditOpen={setIsModalEditOpen}
+                      />
+                    )}
                     <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-3.5">
                       Delete
                     </button>
@@ -46,9 +91,9 @@ function Categories() {
             </tbody>
           </table>
         </div>
-       </div>
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default Categories
+export default Categories;

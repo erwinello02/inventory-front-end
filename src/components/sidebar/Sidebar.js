@@ -107,6 +107,6 @@ const Sidebar = ({ setIsAuthenticated }) => {
       </ul>
     </div>
   );
-}
+};
 
 export default Sidebar;
