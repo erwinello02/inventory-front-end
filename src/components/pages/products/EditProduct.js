@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
+import ApiProductRepository from "../../../apiRepository/ApiProductRepository";
+import ApiCategoryRepository from "../../../apiRepository/ApiCategoryRepository";
 
 const EditProduct = ({
   isOpen,
   onClose,
-  products,
   selectedProduct,
-  setProducts,
   setIsModalEditOpen,
 }) => {
-  const id = selectedProduct.id;
+  const productUuid = selectedProduct.productUuid;
   const [productName, setProductName] = useState(selectedProduct.productName);
-  const [category, setCategory] = useState(selectedProduct.category);
+  const [categoryId, setCategoryId] = useState(
+    selectedProduct.category.categoryId
+  );
   const [subCategory, setSubCategory] = useState(selectedProduct.subCategory);
   const [unit, setUnit] = useState(selectedProduct.unit);
   const [stock, setStock] = useState(selectedProduct.stock);
@@ -23,15 +25,34 @@ const EditProduct = ({
     selectedProduct.discountType
   );
   const [price, setPrice] = useState(selectedProduct.price);
-  const [status, setStatus] = useState(selectedProduct.status);
   const [image, setImage] = useState(selectedProduct.image);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    ApiCategoryRepository.getAllCategories({
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+      params: {
+        pageNumber: 1,
+        pageSize: 200,
+        sort: "DESC",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        setCategories(response.data);
+      })
+      .catch((error) => console.error("Error fetching resources:", error));
+  }, []);
 
   const handleUpdate = (e) => {
     e.preventDefault();
 
     if (
       !productName ||
-      !category ||
+      !categoryId ||
       !subCategory ||
       !unit ||
       !stock ||
@@ -41,7 +62,6 @@ const EditProduct = ({
       !tax ||
       !discountType ||
       !price ||
-      !status ||
       !image
     ) {
       return Swal.fire({
@@ -52,10 +72,10 @@ const EditProduct = ({
       });
     }
 
-    const product = {
-      id,
+    const updateProduct = {
+      productUuid,
       productName,
-      category,
+      categoryId,
       subCategory,
       unit,
       stock,
@@ -65,28 +85,27 @@ const EditProduct = ({
       tax,
       discountType,
       price,
-      status,
       image,
     };
 
-    for (let i = 0; i < products.length; i++) {
-      if (products[i].id === id) {
-        products.splice(i, 1, product);
-        break;
-      }
-    }
-
-    localStorage.setItem("products_data", JSON.stringify(products));
-    setProducts(products);
-    setIsModalEditOpen(false);
-
-    Swal.fire({
-      icon: "success",
-      title: "Updated!",
-      text: `${productName}'s data has been Edited.`,
-      showConfirmButton: false,
-      timer: 1500,
-    });
+    ApiProductRepository.updateProduct(updateProduct, {
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        Swal.fire({
+          icon: "success",
+          title: "Updated!",
+          text: `${productName}'s data has been Edited.`,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        setIsModalEditOpen(false);
+      })
+      .catch((error) => console.error("Error fetching resources:", error));
   };
 
   return (
@@ -121,19 +140,26 @@ const EditProduct = ({
                 </div>
                 <div className="mb-4">
                   <label
-                    htmlFor="category"
+                    htmlFor="categoryId"
                     className="block text-sm font-medium text-gray-700"
                   >
                     Category
                   </label>
-                  <input
-                    type="text"
-                    id="category"
+                  <select
+                    id="categoryId"
                     className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
-                    name="category"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  />
+                    name="categoryId"
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                  >
+                    <option value="">Select...</option>
+                    {categories.results &&
+                      categories.results.map((cat) => (
+                        <option value={cat.categoryId}>
+                          {cat.categoryName}
+                        </option>
+                      ))}
+                  </select>
                 </div>
                 <div className="mb-4">
                   <label
@@ -278,22 +304,6 @@ const EditProduct = ({
                     name="price"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                  />
-                </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="status"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Status
-                  </label>
-                  <input
-                    type="text"
-                    id="status"
-                    className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
-                    name="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
                   />
                 </div>
                 <div className="mb-4">

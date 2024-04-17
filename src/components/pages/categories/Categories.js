@@ -1,23 +1,79 @@
 import React, { useEffect, useState } from "react";
-import { categoriesData } from "./categoriesData";
 import AddCategory from "./AddCategory";
 import EditCategory from "./EditCategory";
+import ApiCategoryRepository from "../../../apiRepository/ApiCategoryRepository";
+import Swal from "sweetalert2";
 
 const Categories = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [categories, setCategories] = useState(categoriesData);
+  const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isModalEditOpen, setIsModalEditOpen] = useState(false);
 
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("categories_data"));
-    if (data !== null && Object.keys(data).length !== 0) setCategories(data);
+    ApiCategoryRepository.getAllCategories({
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+      params: {
+        pageNumber: 1,
+        pageSize: 200,
+        sort: "DESC",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        setCategories(response.data);
+      })
+      .catch((error) => console.error("Error fetching resources:", error));
   }, []);
 
-  const handleEdit = (id) => {
-    const [category] = categories.filter((category) => category.id === id);
-    setSelectedCategory(category);
-    setIsModalEditOpen(true);
+  const handleEdit = (categoryUuid) => {
+    ApiCategoryRepository.getCategoryByUuid(categoryUuid, {
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        setSelectedCategory(response.data);
+        setIsModalEditOpen(true);
+      })
+      .catch((error) => console.error("Error fetching resources:", error));
+  };
+
+  const handleDelete = (categoryUuid) => {
+    Swal.fire({
+      icon: "warning",
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "No, cancel!",
+    }).then((result) => {
+      if (result.value) {
+        ApiCategoryRepository.deleteCategory(categoryUuid, {
+          headers: {
+            "X-USER-NAME": "user1",
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            console.log(response.data);
+            const category = response.data;
+            Swal.fire({
+              icon: "success",
+              title: "Deleted!",
+              text: `${category.categoryName}'s data has been deleted.`,
+              showConfirmButton: false,
+              timer: 1500,
+            });
+          })
+          .catch((error) => console.error("Error fetching resources:", error));
+      }
+    });
   };
 
   return (
@@ -37,8 +93,6 @@ const Categories = () => {
             <AddCategory
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-              categories={categories}
-              setCategories={setCategories}
               setIsModalOpen={setIsModalOpen}
             />
           </div>
@@ -57,37 +111,50 @@ const Categories = () => {
               </tr>
             </thead>
             <tbody>
-              {categoriesData.map((cat, i) => (
-                <tr key={cat.id}>
-                  <td class="border text-md px-5 py-1.5">{i + 1}</td>
-                  <td class="border text-md px-5 py-1.5">{cat.categoryName}</td>
-                  <td class="border text-md px-5 py-1.5">{cat.categoryCode}</td>
-                  <td class="border text-md px-5 py-1.5">{cat.categoryDesc}</td>
-                  <td class="border text-md px-5 py-1.5">{cat.image}</td>
-                  <td class="border text-md px-5 py-1.5">{cat.status}</td>
-                  <td class="border text-md px-5 py-1.5">
-                    <button
-                      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-3.5 mr-2"
-                      onClick={() => handleEdit(cat.id)}
-                    >
-                      Edit
-                    </button>
-                    {isModalEditOpen && (
-                      <EditCategory
-                        isOpen={isModalEditOpen}
-                        onClose={() => setIsModalEditOpen(false)}
-                        categories={categories}
-                        selectedCategory={selectedCategory}
-                        setCategories={setCategories}
-                        setIsModalEditOpen={setIsModalEditOpen}
-                      />
-                    )}
-                    <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-3.5">
-                      Delete
-                    </button>
+              {categories.results ? (
+                categories.results.map((cat) => (
+                  <tr key={cat.categoryId}>
+                    <td class="border text-md px-5 py-1.5">{cat.categoryId}</td>
+                    <td class="border text-md px-5 py-1.5">
+                      {cat.categoryName}
+                    </td>
+                    <td class="border text-md px-5 py-1.5">{cat.code}</td>
+                    <td class="border text-md px-5 py-1.5">
+                      {cat.description}
+                    </td>
+                    <td class="border text-md px-5 py-1.5">{cat.image}</td>
+                    <td class="border text-md px-5 py-1.5">{cat.status}</td>
+                    <td class="border text-md px-5 py-1.5">
+                      <button
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-3.5 mr-2"
+                        onClick={() => handleEdit(cat.categoryUuid)}
+                      >
+                        Edit
+                      </button>
+                      {isModalEditOpen && (
+                        <EditCategory
+                          isOpen={isModalEditOpen}
+                          onClose={() => setIsModalEditOpen(false)}
+                          selectedCategory={selectedCategory}
+                          setIsModalEditOpen={setIsModalEditOpen}
+                        />
+                      )}
+                      <button
+                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-3.5"
+                        onClick={() => handleDelete(cat.categoryUuid)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" class="text-center py-1.5">
+                    No categories found
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

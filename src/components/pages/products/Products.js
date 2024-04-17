@@ -1,27 +1,50 @@
 import React, { useEffect, useState } from "react";
-import { productsData } from "./productsData";
 import AddProduct from "./AddProduct";
 import EditProduct from "./EditProduct";
 import Swal from "sweetalert2";
+import ApiProductRepository from "../../../apiRepository/ApiProductRepository";
 
 const Products = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [products, setProducts] = useState(productsData);
+  const [products, setProducts] = useState([]);
   const [isModalEditOpen, setIsModalEditOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("products_data"));
-    if (data !== null && Object.keys(data).length !== 0) setProducts(data);
+    ApiProductRepository.getAllProducts({
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+      params: {
+        pageNumber: 1,
+        pageSize: 200,
+        sort: "DESC",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        setProducts(response.data);
+      })
+      .catch((error) => console.error("Error fetching resources:", error));
   }, []);
 
-  const handleEdit = (id) => {
-    const [product] = products.filter((product) => product.id === id);
-    setSelectedProduct(product);
-    setIsModalEditOpen(true);
+  const handleEdit = (productUuid) => {
+    ApiProductRepository.getProductByUuid(productUuid, {
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        setSelectedProduct(response.data);
+        setIsModalEditOpen(true);
+      })
+      .catch((error) => console.error("Error fetching resources:", error));
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (productUuid) => {
     Swal.fire({
       icon: "warning",
       title: "Are you sure?",
@@ -31,19 +54,24 @@ const Products = () => {
       cancelButtonText: "No, cancel!",
     }).then((result) => {
       if (result.value) {
-        const [product] = products.filter((product) => product.id === id);
-
-        Swal.fire({
-          icon: "success",
-          title: "Deleted!",
-          text: `${product.productName}'s data has been deleted.`,
-          showConfirmButton: false,
-          timer: 1500,
-        });
-
-        const productsCopy = products.filter((product) => product.id !== id);
-        localStorage.setItem("users_data", JSON.stringify(productsCopy));
-        setProducts(productsCopy);
+        ApiProductRepository.deleteProduct(productUuid, {
+          headers: {
+            "X-USER-NAME": "user1",
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            console.log(response.data);
+            const product = response.data;
+            Swal.fire({
+              icon: "success",
+              title: "Deleted!",
+              text: `${product.productName}'s data has been deleted.`,
+              showConfirmButton: false,
+              timer: 1500,
+            });
+          })
+          .catch((error) => console.error("Error fetching resources:", error));
       }
     });
   };
@@ -65,8 +93,6 @@ const Products = () => {
             <AddProduct
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-              products={products}
-              setProducts={setProducts}
               setIsModalOpen={setIsModalOpen}
             />
           </div>
@@ -93,58 +119,70 @@ const Products = () => {
               </tr>
             </thead>
             <tbody>
-              {productsData.map((product, i) => (
-                <tr key={product.id}>
-                  <td class="border text-md px-2.5 py-1">{i + 1}</td>
-                  <td class="border text-md px-2.5 py-1">
-                    {product.productName}
-                  </td>
-                  <td class="border text-md px-2.5 py-1">{product.category}</td>
-                  <td class="border text-md px-2.5 py-1">
-                    {product.subCategory}
-                  </td>
-                  <td class="border text-md px-2.5 py-1">{product.unit}</td>
-                  <td class="border text-md px-2.5 py-1">{product.stock}</td>
-                  <td class="border text-md px-2.5 py-1">
-                    {product.minimumQty}
-                  </td>
-                  <td class="border text-md px-2.5 py-1">{product.quantity}</td>
-                  <td class="border text-md px-2.5 py-1">
-                    {product.description}
-                  </td>
-                  <td class="border text-md px-2.5 py-1">{product.tax}</td>
-                  <td class="border text-md px-2.5 py-1">
-                    {product.discountType}
-                  </td>
-                  <td class="border text-md px-2.5 py-1">{product.price}</td>
-                  <td class="border text-md px-2.5 py-1">{product.status}</td>
-                  <td class="border text-md px-2.5 py-1">{product.image}</td>
-                  <td class="border text-md px-2.5 py-1">
-                    <button
-                      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-2.5"
-                      onClick={() => handleEdit(product.id)}
-                    >
-                      Edit
-                    </button>
-                    {isModalEditOpen && (
-                      <EditProduct
-                        isOpen={isModalEditOpen}
-                        onClose={() => setIsModalEditOpen(false)}
-                        products={products}
-                        selectedProduct={selectedProduct}
-                        setProducts={setProducts}
-                        setIsModalEditOpen={setIsModalEditOpen}
-                      />
-                    )}
-                    <button
-                      class="bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-2.5"
-                      onClick={() => handleDelete(product.id)}
-                    >
-                      Delete
-                    </button>
+              {products.results ? (
+                products.results.map((product) => (
+                  <tr key={product.productId}>
+                    <td class="border text-md px-2.5 py-1">
+                      {product.productId}
+                    </td>
+                    <td class="border text-md px-2.5 py-1">
+                      {product.productName}
+                    </td>
+                    <td class="border text-md px-2.5 py-1">
+                      {product.category.categoryName}
+                    </td>
+                    <td class="border text-md px-2.5 py-1">
+                      {product.subCategory}
+                    </td>
+                    <td class="border text-md px-2.5 py-1">{product.unit}</td>
+                    <td class="border text-md px-2.5 py-1">{product.stock}</td>
+                    <td class="border text-md px-2.5 py-1">
+                      {product.minimumQty}
+                    </td>
+                    <td class="border text-md px-2.5 py-1">
+                      {product.quantity}
+                    </td>
+                    <td class="border text-md px-2.5 py-1">
+                      {product.description}
+                    </td>
+                    <td class="border text-md px-2.5 py-1">{product.tax}</td>
+                    <td class="border text-md px-2.5 py-1">
+                      {product.discountType}
+                    </td>
+                    <td class="border text-md px-2.5 py-1">{product.price}</td>
+                    <td class="border text-md px-2.5 py-1">{product.status}</td>
+                    <td class="border text-md px-2.5 py-1">{product.image}</td>
+                    <td class="border text-md px-2.5 py-1">
+                      <button
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-2.5"
+                        onClick={() => handleEdit(product.productUuid)}
+                      >
+                        Edit
+                      </button>
+                      {isModalEditOpen && (
+                        <EditProduct
+                          isOpen={isModalEditOpen}
+                          onClose={() => setIsModalEditOpen(false)}
+                          selectedProduct={selectedProduct}
+                          setIsModalEditOpen={setIsModalEditOpen}
+                        />
+                      )}
+                      <button
+                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-2.5"
+                        onClick={() => handleDelete(product.productUuid)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="15" class="text-center py-1.5">
+                    No products found
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

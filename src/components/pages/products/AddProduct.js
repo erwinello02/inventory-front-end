@@ -1,15 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
+import ApiProductRepository from "../../../apiRepository/ApiProductRepository";
+import ApiCategoryRepository from "../../../apiRepository/ApiCategoryRepository";
 
-const AddProduct = ({
-  isOpen,
-  onClose,
-  products,
-  setProducts,
-  setIsModalOpen,
-}) => {
+const AddProduct = ({ isOpen, onClose, setIsModalOpen }) => {
   const [productName, setProductName] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [subCategory, setSubCategory] = useState("");
   const [unit, setUnit] = useState("");
   const [stock, setStock] = useState("");
@@ -19,15 +15,35 @@ const AddProduct = ({
   const [tax, setTax] = useState("");
   const [discountType, setDiscountType] = useState("");
   const [price, setPrice] = useState("");
-  const [status, setStatus] = useState("");
   const [image, setImage] = useState("");
+
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    ApiCategoryRepository.getAllCategories({
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+      params: {
+        pageNumber: 1,
+        pageSize: 200,
+        sort: "DESC",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        setCategories(response.data);
+      })
+      .catch((error) => console.error("Error fetching resources:", error));
+  }, []);
 
   const handleAdd = (e) => {
     e.preventDefault();
 
     if (
       !productName ||
-      !category ||
+      !categoryId ||
       !subCategory ||
       !unit ||
       !stock ||
@@ -37,7 +53,6 @@ const AddProduct = ({
       !tax ||
       !discountType ||
       !price ||
-      !status ||
       !image
     ) {
       return Swal.fire({
@@ -48,11 +63,9 @@ const AddProduct = ({
       });
     }
 
-    const id = products.length + 1;
     const newProduct = {
-      id,
       productName,
-      category,
+      categoryId,
       subCategory,
       unit,
       stock,
@@ -62,22 +75,29 @@ const AddProduct = ({
       tax,
       discountType,
       price,
-      status,
       image,
     };
 
-    products.push(newProduct);
-    localStorage.setItem("products_data", JSON.stringify(products));
-    setProducts(products);
-    setIsModalOpen(false);
-
-    Swal.fire({
-      icon: "success",
-      title: "Added!",
-      text: `${productName}'s data has been Added.`,
-      showConfirmButton: false,
-      timer: 1500,
-    });
+    ApiProductRepository.createProduct(newProduct, {
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        Swal.fire({
+          icon: "success",
+          title: "Added!",
+          text: `${productName}'s data has been Added.`,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        setIsModalOpen(false);
+      })
+      .catch((error) =>
+        console.error("Error fetching resources:", error.response)
+      );
   };
 
   return (
@@ -112,19 +132,26 @@ const AddProduct = ({
                 </div>
                 <div className="mb-4">
                   <label
-                    htmlFor="category"
+                    htmlFor="categoryId"
                     className="block text-sm font-medium text-gray-700"
                   >
                     Category
                   </label>
-                  <input
-                    type="text"
-                    id="category"
+                  <select
+                    id="categoryId"
                     className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
-                    name="category"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  />
+                    name="categoryId"
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                  >
+                    <option value="">Select...</option>
+                    {categories.results &&
+                      categories.results.map((cat) => (
+                        <option value={cat.categoryId}>
+                          {cat.categoryName}
+                        </option>
+                      ))}
+                  </select>
                 </div>
                 <div className="mb-4">
                   <label
@@ -247,7 +274,7 @@ const AddProduct = ({
                     Discount Type
                   </label>
                   <input
-                    type="text"
+                    type="number"
                     id="discountType"
                     className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
                     name="discountType"
@@ -269,22 +296,6 @@ const AddProduct = ({
                     name="price"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                  />
-                </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="status"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Status
-                  </label>
-                  <input
-                    type="text"
-                    id="status"
-                    className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
-                    name="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
                   />
                 </div>
                 <div className="mb-4">

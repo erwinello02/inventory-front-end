@@ -1,23 +1,17 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
+import ApiCategoryRepository from "../../../apiRepository/ApiCategoryRepository";
 
-const AddCategory = ({
-  isOpen,
-  onClose,
-  categories,
-  setCategories,
-  setIsModalOpen,
-}) => {
+const AddCategory = ({ isOpen, onClose, setIsModalOpen }) => {
   const [categoryName, setCategoryName] = useState("");
-  const [categoryCode, setCategoryCode] = useState("");
-  const [categoryDesc, setCategoryDesc] = useState("");
+  const [code, setCode] = useState("");
+  const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
-  const [status, setStatus] = useState("");
 
   const handleAdd = (e) => {
     e.preventDefault();
 
-    if (!categoryName || !categoryCode || !categoryDesc || !image || !status) {
+    if (!categoryName || !code || !description || !image) {
       return Swal.fire({
         icon: "error",
         title: "Error!",
@@ -26,20 +20,33 @@ const AddCategory = ({
       });
     }
 
-    const id = categories.length + 1;
-    const newCategory = {
-      id,
-      categoryName,
-      categoryCode,
-      categoryDesc,
-      image,
-      status,
-    };
+    const newCategory = { categoryName, code, description, image };
 
-    categories.push(newCategory);
-    localStorage.setItem("categories_data", JSON.stringify(categories));
-    setCategories(categories);
-    setIsModalOpen(false);
+    ApiCategoryRepository.createCategory(newCategory, {
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        console.log(response);
+        Swal.fire({
+          icon: "success",
+          title: "Added!",
+          text: `${categoryName}'s data has been Added.`,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        setIsModalOpen(false);
+      })
+      .catch((error) =>
+        console.error("Error fetching resources:", error.response)
+      );
+
+    // categories.push(newCategory);
+    // localStorage.setItem("categories_data", JSON.stringify(categories));
+    // setCategories(categories);
+    // setIsModalOpen(false);
 
     Swal.fire({
       icon: "success",
@@ -82,34 +89,34 @@ const AddCategory = ({
                 </div>
                 <div className="mb-4">
                   <label
-                    htmlFor="categoryCode"
+                    htmlFor="code"
                     className="block text-sm font-medium text-gray-700"
                   >
                     Category Code
                   </label>
                   <input
                     type="text"
-                    id="categoryCode"
+                    id="code"
                     className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
-                    name="categoryCode"
-                    value={categoryCode}
-                    onChange={(e) => setCategoryCode(e.target.value)}
+                    name="code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
                   />
                 </div>
                 <div className="mb-4">
                   <label
-                    htmlFor="categoryDesc"
+                    htmlFor="description"
                     className="block text-sm font-medium text-gray-700"
                   >
                     Category Description
                   </label>
                   <input
                     type="text"
-                    id="categoryDesc"
+                    id="description"
                     className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
-                    name="categoryDesc"
-                    value={categoryDesc}
-                    onChange={(e) => setCategoryDesc(e.target.value)}
+                    name="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                   />
                 </div>
                 <div className="mb-4">
@@ -128,23 +135,6 @@ const AddCategory = ({
                     onChange={(e) => setImage(e.target.value)}
                   />
                 </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="status"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Status
-                  </label>
-                  <input
-                    type="text"
-                    id="status"
-                    className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
-                    name="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                  />
-                </div>
-
                 <div className="flex justify-end">
                   <button
                     type="submit"

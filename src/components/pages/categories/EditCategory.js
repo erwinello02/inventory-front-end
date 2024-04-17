@@ -1,31 +1,24 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
+import ApiCategoryRepository from "../../../apiRepository/ApiCategoryRepository";
 
 const EditCategory = ({
   isOpen,
   onClose,
-  categories,
   selectedCategory,
-  setCategories,
   setIsModalEditOpen,
 }) => {
-  const id = selectedCategory.id;
+  const categoryUuid = selectedCategory.categoryUuid;
   const [categoryName, setCategoryName] = useState(
     selectedCategory.categoryName
   );
-  const [categoryCode, setCategoryCode] = useState(
-    selectedCategory.categoryCode
-  );
-  const [categoryDesc, setCategoryDesc] = useState(
-    selectedCategory.categoryDesc
-  );
+  const [code, setCode] = useState(selectedCategory.code);
+  const [description, setDescription] = useState(selectedCategory.description);
   const [image, setImage] = useState(selectedCategory.image);
-  const [status, setStatus] = useState(selectedCategory.status);
 
   const handleUpdate = (e) => {
     e.preventDefault();
-
-    if (!categoryName || !categoryCode || !categoryDesc || !image || !status) {
+    if (!categoryName || !code || !description || !image) {
       return Swal.fire({
         icon: "error",
         title: "Error!",
@@ -34,33 +27,44 @@ const EditCategory = ({
       });
     }
 
-    const category = {
-      id,
+    const updateCategory = {
+      categoryUuid,
       categoryName,
-      categoryCode,
-      categoryDesc,
+      code,
+      description,
       image,
-      status,
     };
 
-    for (let i = 0; i < categories.length; i++) {
-      if (categories[i].id === id) {
-        categories.splice(i, 1, category);
-        break;
-      }
-    }
+    // for (let i = 0; i < categories.length; i++) {
+    //   if (categories[i].id === id) {
+    //     categories.splice(i, 1, category);
+    //     break;
+    //   }
+    // }
 
-    localStorage.setItem("categories_data", JSON.stringify(categories));
-    setCategories(categories);
-    setIsModalEditOpen(false);
+    // localStorage.setItem("categories_data", JSON.stringify(categories));
+    // setCategories(categories);
+    // setIsModalEditOpen(false);
 
-    Swal.fire({
-      icon: "success",
-      title: "Updated!",
-      text: `${categoryName}'s data has been Edited.`,
-      showConfirmButton: false,
-      timer: 1500,
-    });
+    console.log(updateCategory);
+    ApiCategoryRepository.updateCategory(updateCategory, {
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        Swal.fire({
+          icon: "success",
+          title: "Updated!",
+          text: `${categoryName}'s data has been Edited.`,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        setIsModalEditOpen(false);
+      })
+      .catch((error) => console.error("Error fetching resources:", error));
   };
 
   return (
@@ -79,7 +83,7 @@ const EditCategory = ({
               <form onSubmit={handleUpdate}>
                 <div className="mb-4">
                   <label
-                    htmlFor="firstName"
+                    htmlFor="categoryName"
                     className="block text-sm font-medium text-gray-700"
                   >
                     Category Name
@@ -95,34 +99,34 @@ const EditCategory = ({
                 </div>
                 <div className="mb-4">
                   <label
-                    htmlFor="categoryCode"
+                    htmlFor="code"
                     className="block text-sm font-medium text-gray-700"
                   >
                     Category Code
                   </label>
                   <input
                     type="text"
-                    id="categoryCode"
+                    id="code"
                     className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
-                    name="categoryCode"
-                    value={categoryCode}
-                    onChange={(e) => setCategoryCode(e.target.value)}
+                    name="code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
                   />
                 </div>
                 <div className="mb-4">
                   <label
-                    htmlFor="categoryDesc"
+                    htmlFor="description"
                     className="block text-sm font-medium text-gray-700"
                   >
                     Category Description
                   </label>
                   <input
                     type="text"
-                    id="categoryDesc"
+                    id="description"
                     className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
-                    name="categoryDesc"
-                    value={categoryDesc}
-                    onChange={(e) => setCategoryDesc(e.target.value)}
+                    name="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                   />
                 </div>
                 <div className="mb-4">
@@ -139,22 +143,6 @@ const EditCategory = ({
                     name="image"
                     value={image}
                     onChange={(e) => setImage(e.target.value)}
-                  />
-                </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="status"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Status
-                  </label>
-                  <input
-                    type="text"
-                    id="status"
-                    className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm md:text-md border-gray-300 h-7"
-                    name="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
                   />
                 </div>
 

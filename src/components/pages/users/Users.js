@@ -1,27 +1,51 @@
 import React, { useState, useEffect } from "react";
-import { usersData } from "./usersData";
 import AddUser from "./AddUser";
 import EditUser from "./EditUser";
 import Swal from "sweetalert2";
+import ApiUserRepository from "../../../apiRepository/ApiUserRepository";
 
 const Users = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalEditOpen, setIsModalEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [users, setUsers] = useState(usersData);
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('users_data'));
-    if (data !== null && Object.keys(data).length !== 0) setUsers(data);
+    // Get all users API
+    ApiUserRepository.getAllUsers({
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+      params: {
+        pageNumber: 1,
+        pageSize: 200,
+        sort: "DESC",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        setUsers(response.data);
+      })
+      .catch((error) => console.error("Error fetching resources:", error));
   }, []);
 
-  const handleEdit = (id) => {
-    const [user] = users.filter((user) => user.id === id);
-    setSelectedUser(user);
-    setIsModalEditOpen(true);
+  const handleEdit = (userUuid) => {
+    ApiUserRepository.getUserByUuid(userUuid, {
+      headers: {
+        "X-USER-NAME": "user1",
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+        setSelectedUser(response.data);
+        setIsModalEditOpen(true);
+      })
+      .catch((error) => console.error("Error fetching resources:", error));
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (userUuid) => {
     Swal.fire({
       icon: "warning",
       title: "Are you sure?",
@@ -31,19 +55,24 @@ const Users = () => {
       cancelButtonText: "No, cancel!",
     }).then((result) => {
       if (result.value) {
-        const [user] = users.filter((user) => user.id === id);
-
-        Swal.fire({
-          icon: "success",
-          title: "Deleted!",
-          text: `${user.firstName} ${user.middleName} ${user.lastName}'s data has been deleted.`,
-          showConfirmButton: false,
-          timer: 1500,
-        });
-
-        const usersCopy = users.filter((user) => user.id !== id);
-        localStorage.setItem("users_data", JSON.stringify(usersCopy));
-        setUsers(usersCopy);
+        ApiUserRepository.deleteUser(userUuid, {
+          headers: {
+            "X-USER-NAME": "user1",
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            console.log(response.data);
+            const user = response.data;
+            Swal.fire({
+              icon: "success",
+              title: "Deleted!",
+              text: `${user.firstName} ${user.middleName} ${user.lastName}'s data has been deleted.`,
+              showConfirmButton: false,
+              timer: 1500,
+            });
+          })
+          .catch((error) => console.error("Error fetching resources:", error));
       }
     });
   };
@@ -65,8 +94,6 @@ const Users = () => {
             <AddUser
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-              users={users}
-              setUsers={setUsers}
               setIsModalOpen={setIsModalOpen}
             />
           </div>
@@ -84,49 +111,63 @@ const Users = () => {
                 <th class="border text-md px-3.5 py-1.5">Date of Birth</th>
                 <th class="border text-md px-3.5 py-1.5">Gender</th>
                 <th class="border text-md px-3.5 py-1.5">Username</th>
+                <th class="border text-md px-3.5 py-1.5">Status</th>
                 <th class="border text-md px-3.5 py-1.5">Action</th>
               </tr>
             </thead>
             <tbody>
-              {usersData.map((user, i) => (
-                <tr key={user.id}>
-                  <td class="border text-md px-3.5 py-1.5">{i + 1}</td>
-                  <td class="border text-md px-3.5 py-1.5">{user.firstName}</td>
-                  <td class="border text-md px-3.5 py-1.5">
-                    {user.middleName}
-                  </td>
-                  <td class="border text-md px-3.5 py-1.5">{user.lastName}</td>
-                  <td class="border text-md px-3.5 py-1.5">{user.email}</td>
-                  <td class="border text-md px-3.5 py-1.5">{user.age}</td>
-                  <td class="border text-md px-3.5 py-1.5">{user.dob}</td>
-                  <td class="border text-md px-3.5 py-1.5">{user.gender}</td>
-                  <td class="border text-md px-3.5 py-1.5">{user.userName}</td>
-                  <td class="border text-md px-3.5 py-1.5">
-                    <button
-                      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-3.5 mr-2"
-                      onClick={() => handleEdit(user.id)}
-                    >
-                      Edit
-                    </button>
-                    {isModalEditOpen && (
-                      <EditUser
-                        isOpen={isModalEditOpen}
-                        onClose={() => setIsModalEditOpen(false)}
-                        users={users}
-                        selectedUser={selectedUser}
-                        setUsers={setUsers}
-                        setIsModalEditOpen={setIsModalEditOpen}
-                      />
-                    )}
-                    <button
-                      class="bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-3.5"
-                      onClick={() => handleDelete(user.id)}
-                    >
-                      Delete
-                    </button>
+              {users.results ? (
+                users.results.map((user) => (
+                  <tr key={user.userId}>
+                    <td class="border text-md px-3.5 py-1.5">{user.userId}</td>
+                    <td class="border text-md px-3.5 py-1.5">
+                      {user.firstName}
+                    </td>
+                    <td class="border text-md px-3.5 py-1.5">
+                      {user.middleName}
+                    </td>
+                    <td class="border text-md px-3.5 py-1.5">
+                      {user.lastName}
+                    </td>
+                    <td class="border text-md px-3.5 py-1.5">{user.email}</td>
+                    <td class="border text-md px-3.5 py-1.5">{user.age}</td>
+                    <td class="border text-md px-3.5 py-1.5">{user.dob}</td>
+                    <td class="border text-md px-3.5 py-1.5">{user.gender}</td>
+                    <td class="border text-md px-3.5 py-1.5">
+                      {user.userName}
+                    </td>
+                    <td class="border text-md px-3.5 py-1.5">{user.status}</td>
+                    <td class="border text-md px-3.5 py-1.5">
+                      <button
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-3.5 mr-2"
+                        onClick={() => handleEdit(user.userUuid)}
+                      >
+                        Edit
+                      </button>
+                      {isModalEditOpen && (
+                        <EditUser
+                          isOpen={isModalEditOpen}
+                          onClose={() => setIsModalEditOpen(false)}
+                          selectedUser={selectedUser}
+                          setIsModalEditOpen={setIsModalEditOpen}
+                        />
+                      )}
+                      <button
+                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-3.5"
+                        onClick={() => handleDelete(user.userUuid)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="12" class="text-center py-1.5">
+                    No users found
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
