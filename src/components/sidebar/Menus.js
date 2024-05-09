@@ -3,7 +3,7 @@ import { BiCategory } from "react-icons/bi";
 import { CgProductHunt } from "react-icons/cg";
 
 export const Menus = [
-  { title: "Dashboard", path: "/dashboard" },
+  { title: "Dashboard", path: "/" },
   {
     title: "Users",
     path: "/users",

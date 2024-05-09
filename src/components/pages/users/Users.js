@@ -10,26 +10,6 @@ const Users = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
 
-  useEffect(() => {
-    // Get all users API
-    ApiUserRepository.getAllUsers({
-      headers: {
-        "X-USER-NAME": "user1",
-        "Content-Type": "application/json",
-      },
-      params: {
-        pageNumber: 1,
-        pageSize: 200,
-        sort: "DESC",
-      },
-    })
-      .then((response) => {
-        console.log(response.data);
-        setUsers(response.data);
-      })
-      .catch((error) => console.error("Error fetching resources:", error));
-  }, []);
-
   const handleEdit = (userUuid) => {
     ApiUserRepository.getUserByUuid(userUuid, {
       headers: {
@@ -77,6 +57,48 @@ const Users = () => {
     });
   };
 
+  const fetchUsers = async () => {
+    try{
+      const response = ApiUserRepository.getAllUsers({
+          headers: {
+            "X-USER-NAME": "user1",
+            "Content-Type": "application/json",
+          },
+          params: {
+            pageNumber: 1,
+            pageSize: 200,
+            sort: "DESC",
+          },
+        });
+        console.log((await response).data);
+        setUsers((await response).data);
+
+    } catch(error){
+      console.error("Error fetching resources:", error)
+    }
+  }
+
+  useEffect(() => {
+    fetchUsers();
+    // // Get all users API
+    // ApiUserRepository.getAllUsers({
+    //   headers: {
+    //     "X-USER-NAME": "user1",
+    //     "Content-Type": "application/json",
+    //   },
+    //   params: {
+    //     pageNumber: 1,
+    //     pageSize: 200,
+    //     sort: "DESC",
+    //   },
+    // })
+    //   .then((response) => {
+    //     console.log(response.data);
+    //     setUsers(response.data);
+    //   })
+    //   .catch((error) => console.error("Error fetching resources:", error));
+  }, []);
+
   return (
     <div className="users">
       <div className="p-7">
@@ -95,6 +117,7 @@ const Users = () => {
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
               setIsModalOpen={setIsModalOpen}
+              fetchUser={fetchUsers}
             />
           </div>
         </div>
@@ -150,6 +173,7 @@ const Users = () => {
                           onClose={() => setIsModalEditOpen(false)}
                           selectedUser={selectedUser}
                           setIsModalEditOpen={setIsModalEditOpen}
+                          fetchUser={fetchUsers}
                         />
                       )}
                       <button

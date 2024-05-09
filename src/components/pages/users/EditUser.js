@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Swal from "sweetalert2";
 import ApiUserRepository from "../../../apiRepository/ApiUserRepository";
 
-const EditUser = ({ isOpen, onClose, selectedUser, setIsModalEditOpen }) => {
+const EditUser = ({ isOpen, onClose, selectedUser, setIsModalEditOpen, fetchUsers }) => {
   const userUuid = selectedUser.userUuid;
   const [firstName, setFirstName] = useState(selectedUser.firstName);
   const [middleName, setMiddleName] = useState(selectedUser.middleName);

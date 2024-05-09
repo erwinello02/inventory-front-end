@@ -2,7 +2,7 @@ import { useState } from "react";
 import Swal from "sweetalert2";
 import ApiUserRepository from "../../../apiRepository/ApiUserRepository";
 
-const AddUser = ({ isOpen, onClose, setIsModalOpen }) => {
+const AddUser = ({ isOpen, onClose, setIsModalOpen, fetchUsers }) => {
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -59,6 +59,7 @@ const AddUser = ({ isOpen, onClose, setIsModalOpen }) => {
           timer: 1500,
         });
         setIsModalOpen(false);
+        fetchUsers();
       })
       .catch((error) =>
         console.error("Error fetching resources:", error.response)
